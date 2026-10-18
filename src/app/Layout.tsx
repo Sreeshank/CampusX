@@ -2,7 +2,7 @@ import { NavLink, Outlet, Link, useNavigate } from "react-router-dom";
 import {
   Home,
   ShoppingBag,
-  CarFront,
+  Bike,
   MessageCircle,
   UserRound,
   ShieldCheck,
@@ -13,11 +13,11 @@ import {
 import { api, useDemo } from "../lib/demo/store";
 import { Avatar } from "../components/ui";
 const links = [
-  { to: "/home", label: "Overview", icon: Home },
+  { to: "/home", label: "Home", icon: Home },
   { to: "/xchange", label: "XChange", icon: ShoppingBag },
-  { to: "/xride", label: "XRide", icon: CarFront },
+  { to: "/xride", label: "XRide", icon: Bike },
   { to: "/messages", label: "Messages", icon: MessageCircle },
-  { to: "/profile", label: "My profile", icon: UserRound },
+  { to: "/profile", label: "Profile", icon: UserRound },
 ];
 export function Layout() {
   const s = useDemo();
@@ -25,7 +25,7 @@ export function Layout() {
   const navigate = useNavigate();
   const unread = s.notices.filter((n) => n.uid === user.id && !n.read).length;
   return (
-    <div className="app">
+    <div className="app customer-template">
       <aside className="sidebar">
         <Link className="brand" to="/home">
           <span className="brand-mark">X</span>Campus<span>X</span>
@@ -96,6 +96,9 @@ export function Layout() {
             <span className="desktop-label">Connect. Share. Ride.</span>
           </div>
           <div className="topbar-actions">
+            <Link className="icon-button" to="/messages" aria-label="Messages">
+              <MessageCircle size={20} />
+            </Link>
             <span className="term-pill">Your campus circle</span>
             <Link
               className="icon-button notification-button"
@@ -118,19 +121,21 @@ export function Layout() {
           <span>CampusX starter · v1.0</span>
         </footer>
       </div>
-      <nav className="mobile-nav">
-        {links.map(({ to, label, icon: Icon }) => (
-          <NavLink key={to} to={to}>
-            <Icon size={19} />
-            <span>
-              {label === "Overview"
-                ? "Home"
-                : label === "My profile"
-                  ? "Profile"
-                  : label}
-            </span>
-          </NavLink>
-        ))}
+      <nav className="mobile-nav" aria-label="Main navigation">
+        {links
+          .filter((link) => link.to !== "/messages")
+          .map(({ to, label, icon: Icon }) => (
+            <NavLink key={to} to={to}>
+              <Icon size={19} />
+              <span>
+                {label === "Overview"
+                  ? "Home"
+                  : label === "My profile"
+                    ? "Profile"
+                    : label}
+              </span>
+            </NavLink>
+          ))}
       </nav>
     </div>
   );

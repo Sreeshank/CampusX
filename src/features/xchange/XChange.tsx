@@ -1,6 +1,19 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { Plus, Search, ArrowLeft, MessageCircle, Flag } from "lucide-react";
+import {
+  Plus,
+  Search,
+  ArrowLeft,
+  MessageCircle,
+  Flag,
+  BookOpen,
+  Laptop,
+  Armchair,
+  Backpack,
+  Bike,
+  Grid2X2,
+  Shapes,
+} from "lucide-react";
 import { api, useDemo } from "../../lib/demo/store";
 import { CATEGORIES, CONDITIONS } from "../../../shared/constants";
 import type { ListingMode, CreateListingInput } from "../../../shared/types";
@@ -17,6 +30,15 @@ import {
 import { money } from "../../lib/format";
 import { compressImage } from "../../lib/images";
 import { errorText } from "../../../shared/validation";
+const categoryIcons = {
+  all: Grid2X2,
+  books: BookOpen,
+  electronics: Laptop,
+  furniture: Armchair,
+  hostel: Backpack,
+  bicycles: Bike,
+  other: Shapes,
+};
 export function Marketplace({
   saved = false,
   mine = false,
@@ -40,13 +62,7 @@ export function Marketplace({
     <>
       <PageHead
         eyebrow="XCHANGE · YOUR CAMPUS MARKETPLACE"
-        title={
-          mine
-            ? "Your listings"
-            : saved
-              ? "Saved for later"
-              : "Find your next good thing."
-        }
+        title={mine ? "Your listings" : saved ? "Saved for later" : "XChange"}
         description="Pre-loved essentials, useful swaps, and things worth passing on."
       >
         <Link className="button primary" to="/xchange/new">
@@ -86,16 +102,23 @@ export function Marketplace({
           <option value="donation">Free items</option>
         </select>
       </div>
-      <div className="chips">
-        {["all", ...CATEGORIES].map((c) => (
-          <button
-            key={c}
-            onClick={() => setCategory(c)}
-            className={category === c ? "active" : ""}
-          >
-            {c === "all" ? "Everything" : c}
-          </button>
-        ))}
+      <div className="chips category-tiles" aria-label="Listing categories">
+        {["all", ...CATEGORIES].map((c) => {
+          const Icon = categoryIcons[c as keyof typeof categoryIcons];
+          return (
+            <button
+              key={c}
+              onClick={() => setCategory(c)}
+              aria-pressed={category === c}
+              className={category === c ? "active" : ""}
+            >
+              <span className="category-tile-icon">
+                <Icon size={24} />
+              </span>
+              {c === "all" ? "All items" : c}
+            </button>
+          );
+        })}
       </div>
       <div className="result-caption">
         {items.length} {items.length === 1 ? "item" : "items"} · KITS Warangal

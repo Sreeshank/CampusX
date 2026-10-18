@@ -1,13 +1,11 @@
 import { Link } from "react-router-dom";
 import {
-  ArrowUpRight,
   ArrowRight,
   ShoppingBag,
-  CarFront,
+  Bike,
   Leaf,
   Users,
   Sparkles,
-  GraduationCap,
 } from "lucide-react";
 import { useDemo } from "../../lib/demo/store";
 import { ListingCard, PageHead } from "../../components/ui";
@@ -20,86 +18,54 @@ export function Home() {
   return (
     <>
       <PageHead
-        eyebrow="A LITTLE MORE CAMPUS. A LITTLE LESS HASSLE."
+        eyebrow="YOUR CAMPUS, CONNECTED"
         title={`Hey, ${user.displayName.split(" ")[0]}.`}
         description="Good finds. Shared journeys. People you already have something in common with."
       />
-      <section className="hero">
-        <div className="hero-copy">
-          <div className="hero-pill">
-            <Sparkles size={15} /> Your campus, in good company
-          </div>
+      <section className="customer-hero">
+        <div className="customer-hero-copy">
+          <span className="campus-chip">KITS Warangal</span>
           <h2>
-            Great things happen
-            <br />
-            when we <em>share.</em>
+            Campus<span>X</span>
           </h2>
+          <p className="customer-tagline">For a smarter campus life</p>
           <p>
-            Give your things a second chapter.
+            Buy. Sell. Swap. Share.
             <br />
-            Find someone going your way.
+            Together at KITS.
           </p>
-          <Link className="button white" to="/xchange">
-            Explore XChange <ArrowUpRight size={18} />
-          </Link>
         </div>
-        <div className="hero-art" aria-hidden="true">
-          <div className="orb orb-1" />
-          <div className="orb orb-2" />
-          <div className="floating-card floating-book">
-            <ShoppingBag />
-            <span>
-              Find your next
-              <br />
-              <b>good thing.</b>
-            </span>
-          </div>
-          <div className="campus-building">
-            <GraduationCap size={80} strokeWidth={1} />
-            <span>
-              CAMPUS
-              <br />
-              <b>CONNECTIONS</b>
-            </span>
-          </div>
-          <div className="floating-card floating-ride">
-            <CarFront />
-            <span>
-              Better
-              <br />
-              <b>together.</b>
-            </span>
-          </div>
-          <span className="star star-one">✦</span>
-          <span className="star star-two">✧</span>
-        </div>
+        <img
+          src="/campus-community.svg"
+          alt="Illustration of three students together on campus"
+        />
       </section>
-      <div className="module-grid">
-        <Link to="/xchange" className="module-card">
-          <span className="module-icon purple">
+      <div className="module-grid customer-modules">
+        <Link to="/xchange" className="module-card exchange-module">
+          <span className="module-icon">
             <ShoppingBag />
           </span>
           <div>
             <h3>XChange</h3>
-            <p>Buy, sell, swap, or give something back.</p>
+            <p>Buy, Sell, Swap, Donate</p>
           </div>
-          <ArrowUpRight className="module-arrow" />
+          <ArrowRight className="module-arrow" />
         </Link>
-        <Link to="/xride" className="module-card">
-          <span className="module-icon mint">
-            <CarFront />
+        <Link to="/xride" className="module-card ride-module">
+          <span className="module-icon">
+            <Bike />
           </span>
           <div>
             <h3>XRide</h3>
-            <p>Same direction? Share the journey.</p>
+            <p>Find &amp; share campus rides</p>
           </div>
-          <ArrowUpRight className="module-arrow" />
+          <ArrowRight className="module-arrow" />
         </Link>
       </div>
       <section className="section">
         <div className="section-heading">
           <div>
-            <h2>Fresh on your campus</h2>
+            <h2>Popular on campus</h2>
             <p>A few things looking for their next home.</p>
           </div>
           <Link to="/xchange">
