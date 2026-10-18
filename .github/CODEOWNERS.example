@@ -1,0 +1,11 @@
+# Rename to CODEOWNERS after replacing placeholders with verified GitHub usernames.
+# Do not enable placeholder owners.
+# /src/app/ @Sreeshank
+# /src/components/ @Sreeshank
+# /src/features/xchange/ @Sreeshank
+# /functions/src/xchange/ @Sreeshank
+# /src/features/auth/ @PERSON_2
+# /src/features/admin/ @PERSON_2
+# /functions/src/platform/ @PERSON_2
+# /src/features/xride/ @PERSON_3
+# /functions/src/xride/ @PERSON_3

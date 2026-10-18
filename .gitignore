@@ -1,0 +1,14 @@
+node_modules/
+dist/
+functions/lib/
+.env
+.env.*
+!.env.example
+*service-account*.json
+*serviceAccount*.json
+*.log
+.emulator-data/
+playwright-report/
+test-results/
+.DS_Store
+*.tsbuildinfo

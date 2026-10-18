@@ -1,0 +1,8 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Safe starter: Person 2 must implement and test the documented read policy.
+    // All business writes will use authorized callable functions.
+    match /{document=**} { allow read, write: if false; }
+  }
+}
