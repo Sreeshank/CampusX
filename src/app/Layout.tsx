@@ -12,6 +12,11 @@ import {
 } from "lucide-react";
 import { api, useDemo } from "../lib/demo/store";
 import { Avatar } from "../components/ui";
+import { useLiveXChange } from "../features/xchange/LiveXChange";
+import { LiveLayout } from "./LiveLayout";
+export function Layout() {
+  return useLiveXChange() ? <LiveLayout /> : <DemoLayout />;
+}
 const links = [
   { to: "/home", label: "Home", icon: Home },
   { to: "/xchange", label: "XChange", icon: ShoppingBag },
@@ -19,7 +24,7 @@ const links = [
   { to: "/messages", label: "Messages", icon: MessageCircle },
   { to: "/profile", label: "Profile", icon: UserRound },
 ];
-export function Layout() {
+function DemoLayout() {
   const s = useDemo();
   const user = s.users.find((u) => u.id === s.currentUserId)!;
   const navigate = useNavigate();

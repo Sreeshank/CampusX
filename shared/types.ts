@@ -31,6 +31,8 @@ export interface Listing {
   status: ListingStatus;
   createdAt: string;
   updatedAt: string;
+  pendingDealId?: string | null;
+  confirmedDealId?: string;
 }
 export type CreateListingInput = Pick<
   Listing,
@@ -112,7 +114,20 @@ export interface Notice {
   read: boolean;
   createdAt: string;
 }
+export interface Deal {
+  id: string;
+  listingId: string;
+  sellerId: string;
+  buyerId: string;
+  campusId: string;
+  mode: ListingMode;
+  status: "proposed" | "confirmed" | "cancelled";
+  sellerConfirmed: boolean;
+  buyerConfirmed: boolean;
+  createdAt: string;
+}
 export interface DemoState {
+  deals?: Deal[];
   version: 1;
   currentUserId: string;
   users: User[];

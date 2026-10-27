@@ -71,3 +71,7 @@ npm run functions:build
 The local demo adapter uses some convenient synchronous methods; it is not a drop-in implementation of every callable. Person 2 must build an asynchronous service layer and account provider. See the method mapping in `docs/FIREBASE_HANDOFF.md`.
 
 Use emulators before connecting real users. Do not deploy this starter's deny-all rules over an existing working project's rules. No deployment is performed automatically by the CI workflow.
+
+## Person 1 implementation
+
+Home and XChange now include image galleries, pagination/sorting/status filters, confirmed handovers, implemented server handlers and Firestore transaction tests. The live view takes real platform services through `XChangeLiveProvider`; the default app remains demo until Person 2 completes the app-wide provider and guards. Read [the Person 1 handoff](docs/PERSON_1_HANDOFF.md). Run `npm run test:xchange:emulator` for the backend checks.

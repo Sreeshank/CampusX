@@ -15,7 +15,8 @@
     "test:domain": "node --test tests/ride-transitions.test.mjs",
     "test:e2e": "playwright test",
     "functions:build": "npm --prefix functions run build",
-    "format": "prettier --write src shared functions/src tests"
+    "format": "prettier --write src shared functions/src tests",
+    "test:xchange:emulator": "npm run functions:build && npm exec --yes --package=firebase-tools@14.18.0 -- firebase emulators:exec --only firestore --project demo-campusx-person1 'node --test functions/tests/xchange.emulator.test.cjs'"
   },
   "dependencies": {
     "firebase": "12.4.0",

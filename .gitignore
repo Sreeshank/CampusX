@@ -12,3 +12,8 @@ playwright-report/
 test-results/
 .DS_Store
 *.tsbuildinfo
+
+# Local verification outputs
+firestore-debug.log
+ui-debug.log
+firebase-debug.log

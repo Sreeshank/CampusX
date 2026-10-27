@@ -12,7 +12,7 @@ export const listingSchema = z
       .string()
       .refine((v) => CONDITIONS.includes(v), "Choose a condition."),
     mode: z.enum(["sale", "swap", "donation"]),
-    pricePaise: z.number().int().nonnegative().nullable(),
+    pricePaise: z.number().int().nonnegative().max(100_000_000).nullable(),
     swapWanted: z.string().trim().max(200).optional(),
     imagePaths: z.array(z.string()).min(1).max(5),
     idempotencyKey: z.string().min(1),

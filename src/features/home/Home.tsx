@@ -9,7 +9,12 @@ import {
 } from "lucide-react";
 import { useDemo } from "../../lib/demo/store";
 import { ListingCard, PageHead } from "../../components/ui";
+import { useLiveXChange } from "../xchange/LiveXChange";
+import { LiveHome } from "./LiveHome";
 export function Home() {
+  return useLiveXChange() ? <LiveHome /> : <DemoHome />;
+}
+function DemoHome() {
   const s = useDemo();
   const user = s.users.find((u) => u.id === s.currentUserId)!;
   const listings = s.listings

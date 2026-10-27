@@ -20,6 +20,11 @@ jobs:
         run: |
           if [ -f functions/package-lock.json ]; then npm --prefix functions ci; else npm --prefix functions install; fi
           npm run functions:build
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm run test:xchange:emulator
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
       - name: Preserve generated lockfiles for the leader

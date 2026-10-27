@@ -41,3 +41,7 @@ Own listings: ownerId + createdAt desc. Own offers: driverId + departureAt desc.
 
 ## Storage paths
 listing-images/{uid}/{uploadId}/{randomFileName}: only that active verified owner uploads JPEG/PNG/WebP, maximum 5 MiB per file, maximum five images referenced by a listing. avatars/{uid}/{fileName}: same formats, maximum 2 MiB. Save object paths, not arbitrary URLs supplied by the client. Function verifies referenced objects exist, belong to caller and meet the expected path/type/size. Use authenticated SDK downloads for campus-only images; avoid public long-lived token URLs if images must remain restricted. Remove abandoned uploads with a scheduled, retry-safe cleanup task after a grace period. Do not collect student ID images for the initial manual approval flow.
+
+## Person 1 implemented module extension
+
+The listing/deal implementation adds optional pendingDealId and confirmedDealId references, server-only xchangeRateLimits records, and read-callable result projections. See ../../PERSON_1_HANDOFF.md for exact shapes, cursor limits, timestamp versions, receipt IDs and the platform integration gate. These additions preserve the original lifecycle and participant permissions.
