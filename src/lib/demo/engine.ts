@@ -22,6 +22,8 @@ export function createDemoEngine(
   let state = initial;
   const listeners = new Set<() => void>();
   const now = () => new Date().toISOString();
+  const nextTime = (old: string) =>
+    new Date(Math.max(Date.now(), Date.parse(old) + 1)).toISOString();
   const id = () => crypto.randomUUID();
   function update<T>(fn: (draft: DemoState) => T): T {
     const draft = structuredClone(state);
@@ -139,7 +141,11 @@ export function createDemoEngine(
         const data = listingSchema.parse(input);
         return once(s, input.idempotencyKey, input, () => {
           if (
-            data.imagePaths.some((p) => !p.startsWith("demo:") && !s.images[p])
+            data.imagePaths.some(
+              (p) =>
+                !p.startsWith("demo:") &&
+                (!p.startsWith(`demo-upload/${u.id}/`) || !s.images[p]),
+            )
           )
             throw new Error("Upload the image first.");
           const listingId = id();
@@ -167,20 +173,38 @@ export function createDemoEngine(
         const item = listing(s, listingId);
         if (item.ownerId !== u.id)
           throw new Error("Only the owner can edit this item.");
+        if (item.pendingDealId)
+          throw new Error("Confirm or cancel the pending handover first.");
         if (!["active", "reserved"].includes(item.status))
           throw new Error("This listing cannot be edited.");
         if (item.updatedAt !== expectedUpdatedAt)
           throw new Error("This item changed. Reload before editing.");
         const { idempotencyKey: _key, ...data } = listingSchema.parse(input);
-        Object.assign(item, data, { updatedAt: now() });
+        if (
+          data.imagePaths.some(
+            (p) =>
+              !p.startsWith("demo:") &&
+              (!p.startsWith(`demo-upload/${u.id}/`) || !s.images[p]),
+          )
+        )
+          throw new Error("Upload your own image first.");
+        Object.assign(item, data, { updatedAt: nextTime(item.updatedAt) });
       });
     },
-    setListingStatus(listingId: string, status: ListingStatus) {
+    setListingStatus(
+      listingId: string,
+      status: ListingStatus,
+      expectedUpdatedAt?: string,
+    ) {
       update((s) => {
         const u = user(s);
         const item = listing(s, listingId);
         if (item.ownerId !== u.id)
           throw new Error("Only the owner can update this listing.");
+        if (expectedUpdatedAt && item.updatedAt !== expectedUpdatedAt)
+          throw new Error("This item changed. Reload before updating.");
+        if (item.pendingDealId)
+          throw new Error("Confirm or cancel the pending handover first.");
         const allowed: Record<ListingStatus, ListingStatus[]> = {
           active: ["reserved", "completed", "withdrawn"],
           reserved: ["active", "completed", "withdrawn"],
@@ -191,7 +215,108 @@ export function createDemoEngine(
         if (!allowed[item.status].includes(status))
           throw new Error("This status change is not allowed.");
         item.status = status;
-        item.updatedAt = now();
+        item.updatedAt = nextTime(item.updatedAt);
+      });
+    },
+    proposeDeal(listingId: string, buyerId: string, key: string) {
+      return update((s) => {
+        const u = user(s),
+          item = listing(s, listingId);
+        return once(s, key, { action: "deal", listingId, buyerId }, () => {
+          if (item.ownerId !== u.id)
+            throw new Error("Only the owner can propose a handover.");
+          const buyer = s.users.find((p) => p.id === buyerId);
+          if (
+            !buyer ||
+            buyerId === u.id ||
+            buyer.campusId !== u.campusId ||
+            buyer.accountStatus !== "active" ||
+            buyer.verificationStatus !== "verified" ||
+            blocked(s, u.id, buyerId)
+          )
+            throw new Error("Student unavailable.");
+          if (
+            !s.conversations.some(
+              (c) =>
+                c.contextType === "listing" &&
+                c.contextId === listingId &&
+                c.participantIds.includes(u.id) &&
+                c.participantIds.includes(buyerId),
+            )
+          )
+            throw new Error("Start a listing conversation first.");
+          if (
+            !["active", "reserved"].includes(item.status) ||
+            item.pendingDealId
+          )
+            throw new Error("Listing already has a handover or is closed.");
+          const dealId = id();
+          (s.deals ??= []).push({
+            id: dealId,
+            listingId,
+            sellerId: u.id,
+            buyerId,
+            campusId: u.campusId,
+            mode: item.mode,
+            status: "proposed",
+            sellerConfirmed: false,
+            buyerConfirmed: false,
+            createdAt: now(),
+          });
+          item.status = "reserved";
+          item.pendingDealId = dealId;
+          item.updatedAt = nextTime(item.updatedAt);
+          notify(
+            s,
+            buyerId,
+            "Confirm your item handover",
+            `/xchange/${listingId}`,
+          );
+          return { dealId };
+        });
+      });
+    },
+    confirmDeal(dealId: string, confirm: boolean) {
+      return update((s) => {
+        const u = user(s),
+          deal = s.deals?.find((d) => d.id === dealId);
+        if (
+          !deal ||
+          ![deal.sellerId, deal.buyerId].includes(u.id) ||
+          deal.campusId !== u.campusId
+        )
+          throw new Error("Handover unavailable.");
+        if (deal.status !== "proposed") return { status: deal.status };
+        const item = listing(s, deal.listingId);
+        if (item.pendingDealId !== deal.id || item.status !== "reserved")
+          throw new Error("Handover no longer available.");
+        if (
+          confirm &&
+          (blocked(s, deal.sellerId, deal.buyerId) ||
+            ![deal.sellerId, deal.buyerId].every((id) =>
+              s.users.some(
+                (p) =>
+                  p.id === id &&
+                  p.accountStatus === "active" &&
+                  p.verificationStatus === "verified" &&
+                  p.campusId === u.campusId,
+              ),
+            ))
+        )
+          throw new Error("Student unavailable.");
+        if (!confirm) deal.status = "cancelled";
+        else {
+          if (u.id === deal.sellerId) deal.sellerConfirmed = true;
+          else deal.buyerConfirmed = true;
+          if (deal.sellerConfirmed && deal.buyerConfirmed)
+            deal.status = "confirmed";
+        }
+        if (deal.status !== "proposed") {
+          item.status = deal.status === "confirmed" ? "completed" : "active";
+          item.pendingDealId = null;
+          item.updatedAt = nextTime(item.updatedAt);
+        }
+        return { status: deal.status };
       });
     },
     saveListing(listingId: string) {

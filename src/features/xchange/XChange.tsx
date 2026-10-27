@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import {
+  Link,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 import {
   Plus,
   Search,
@@ -30,6 +35,25 @@ import {
 import { money } from "../../lib/format";
 import { compressImage } from "../../lib/images";
 import { errorText } from "../../../shared/validation";
+import {
+  useLiveXChange,
+  LiveMarketplace,
+  LiveListingDetail,
+  LiveListingForm,
+} from "./LiveXChange";
+export function Marketplace(props: { saved?: boolean; mine?: boolean }) {
+  return useLiveXChange() ? (
+    <LiveMarketplace {...props} />
+  ) : (
+    <DemoMarketplace {...props} />
+  );
+}
+export function ListingDetail() {
+  return useLiveXChange() ? <LiveListingDetail /> : <DemoListingDetail />;
+}
+export function ListingForm() {
+  return useLiveXChange() ? <LiveListingForm /> : <DemoListingForm />;
+}
 const categoryIcons = {
   all: Grid2X2,
   books: BookOpen,
@@ -39,7 +63,7 @@ const categoryIcons = {
   bicycles: Bike,
   other: Shapes,
 };
-export function Marketplace({
+function DemoMarketplace({
   saved = false,
   mine = false,
 }: {
@@ -47,17 +71,49 @@ export function Marketplace({
   mine?: boolean;
 }) {
   const s = useDemo();
-  const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("all");
-  const [mode, setMode] = useState("all");
-  const items = s.listings.filter(
-    (l) =>
-      (mine ? l.ownerId === s.currentUserId : l.status === "active") &&
-      (!saved || s.saved[s.currentUserId]?.includes(l.id)) &&
-      (category === "all" || l.category === category) &&
-      (mode === "all" || l.mode === mode) &&
-      l.title.toLowerCase().startsWith(query.trim().toLowerCase()),
-  );
+  const [params, setParams] = useSearchParams();
+  const query = params.get("q") ?? "",
+    category = params.get("category") ?? "all",
+    mode = params.get("mode") ?? "all",
+    sort = params.get("sort") ?? "newest",
+    status = params.get("status") ?? "all";
+  const [page, setPage] = useState({ key: "", count: 12 });
+  const filterKey = params.toString() + s.currentUserId + mine + saved;
+  const visibleCount = page.key === filterKey ? page.count : 12;
+  function filter(key: string, value: string) {
+    const next = new URLSearchParams(params);
+    if (value === "all" || !value) next.delete(key);
+    else next.set(key, value);
+    if (key === "q") next.delete("sort");
+    if (key === "sort" && value !== "newest") {
+      next.delete("q");
+      next.set("mode", "sale");
+    }
+    if (key === "mode" && value !== "sale") next.delete("sort");
+    setParams(next, { replace: true });
+  }
+  const currentUser = s.users.find((u) => u.id === s.currentUserId)!;
+  const items = s.listings
+    .filter(
+      (l) =>
+        l.campusId === currentUser.campusId &&
+        (mine
+          ? l.ownerId === s.currentUserId &&
+            (status === "all" || l.status === status)
+          : l.status === "active") &&
+        (!saved || s.saved[s.currentUserId]?.includes(l.id)) &&
+        (category === "all" || l.category === category) &&
+        (mode === "all" || l.mode === mode) &&
+        l.title.toLowerCase().startsWith(query.trim().toLowerCase()),
+    )
+    .sort((a, b) =>
+      sort === "price-asc"
+        ? (a.pricePaise ?? 0) - (b.pricePaise ?? 0) || a.id.localeCompare(b.id)
+        : sort === "price-desc"
+          ? (b.pricePaise ?? 0) - (a.pricePaise ?? 0) ||
+            a.id.localeCompare(b.id)
+          : b.createdAt.localeCompare(a.createdAt) || a.id.localeCompare(b.id),
+    );
   return (
     <>
       <PageHead
@@ -88,13 +144,13 @@ export function Marketplace({
             aria-label="Search listings"
             placeholder="Search by the beginning of an item title…"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => filter("q", e.target.value)}
           />
         </div>
         <select
           aria-label="Listing mode"
           value={mode}
-          onChange={(e) => setMode(e.target.value)}
+          onChange={(e) => filter("mode", e.target.value)}
         >
           <option value="all">All exchanges</option>
           <option value="sale">For sale</option>
@@ -108,7 +164,7 @@ export function Marketplace({
           return (
             <button
               key={c}
-              onClick={() => setCategory(c)}
+              onClick={() => filter("category", c)}
               aria-pressed={category === c}
               className={category === c ? "active" : ""}
             >
@@ -120,17 +176,67 @@ export function Marketplace({
           );
         })}
       </div>
-      <div className="result-caption">
+      <div className="market-controls">
+        <label>
+          Sort listings
+          <select
+            aria-label="Sort listings"
+            value={sort}
+            onChange={(e) => filter("sort", e.target.value)}
+          >
+            <option value="newest">Newest first</option>
+            <option value="price-asc">Sale price: low to high</option>
+            <option value="price-desc">Sale price: high to low</option>
+          </select>
+        </label>
+        {mine && (
+          <label>
+            Listing status
+            <select
+              aria-label="Listing status"
+              value={status}
+              onChange={(e) => filter("status", e.target.value)}
+            >
+              {[
+                "all",
+                "active",
+                "reserved",
+                "completed",
+                "withdrawn",
+                "removed",
+              ].map((v) => (
+                <option key={v} value={v}>
+                  {v}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        {params.size > 0 && (
+          <button className="text-button" onClick={() => setParams({})}>
+            Clear filters
+          </button>
+        )}
+      </div>
+      <div className="result-caption" role="status">
         {items.length} {items.length === 1 ? "item" : "items"} · KITS Warangal
       </div>
       {items.length ? (
         <div className="listing-grid">
-          {items.map((l) => (
+          {items.slice(0, visibleCount).map((l) => (
             <div key={l.id}>
               <ListingCard listing={l} />
               {mine && (
                 <div className="under-card">
-                  <Status>{l.status}</Status>
+                  <Status>
+                    {l.status === "completed"
+                      ? l.mode === "sale"
+                        ? "sold"
+                        : l.mode === "swap"
+                          ? "swapped"
+                          : "donated"
+                      : l.status}
+                  </Status>
                 </div>
               )}
             </div>
@@ -144,10 +250,18 @@ export function Marketplace({
           action="Post an item"
         />
       )}
+      {items.length > visibleCount && (
+        <button
+          className="button secondary load-more"
+          onClick={() => setPage({ key: filterKey, count: visibleCount + 12 })}
+        >
+          Load more listings
+        </button>
+      )}
     </>
   );
 }
-export function ListingDetail() {
+function DemoListingDetail() {
   const { listingId } = useParams();
   const s = useDemo();
   const l = s.listings.find((l) => l.id === listingId);
@@ -156,11 +270,21 @@ export function ListingDetail() {
   const [reason, setReason] = useState("");
   const [reporting, setReporting] = useState(false);
   const [notice, setNotice] = useState("");
+  const [buyer, setBuyer] = useState("");
+  const [handoverKey] = useState(() => crypto.randomUUID());
+  const myDeal = s.deals?.find(
+    (d) =>
+      d.listingId === listingId &&
+      d.status !== "cancelled" &&
+      [d.sellerId, d.buyerId].includes(s.currentUserId),
+  );
   if (
     !l ||
+    l.campusId !== s.users.find((u) => u.id === s.currentUserId)?.campusId ||
     l.status === "removed" ||
     (["completed", "withdrawn"].includes(l.status) &&
-      l.ownerId !== s.currentUserId)
+      l.ownerId !== s.currentUserId &&
+      !myDeal)
   )
     return (
       <Empty
@@ -172,6 +296,27 @@ export function ListingDetail() {
     );
   const owner = s.users.find((u) => u.id === l.ownerId)!;
   const own = l.ownerId === s.currentUserId;
+  const buyerIds = [
+    ...new Set(
+      s.conversations
+        .filter(
+          (c) =>
+            c.contextType === "listing" &&
+            c.contextId === l.id &&
+            c.participantIds.includes(s.currentUserId),
+        )
+        .flatMap((c) =>
+          c.participantIds.filter((id) => id !== s.currentUserId),
+        ),
+    ),
+  ];
+  const buyers = s.users.filter(
+    (u) =>
+      buyerIds.includes(u.id) &&
+      u.campusId === l.campusId &&
+      u.accountStatus === "active" &&
+      u.verificationStatus === "verified",
+  );
   return (
     <>
       <Link className="back-link" to="/xchange">
@@ -186,7 +331,15 @@ export function ListingDetail() {
           </div>
           <h1>{l.title}</h1>
           <div className="detail-price">{money(l.pricePaise)}</div>
-          <Status>{l.status}</Status>
+          <Status>
+            {l.status === "completed"
+              ? l.mode === "sale"
+                ? "sold"
+                : l.mode === "swap"
+                  ? "swapped"
+                  : "donated"
+              : l.status}
+          </Status>
           <p className="detail-description">{l.description}</p>
           {l.mode === "swap" && (
             <div className="info-box">Looking to swap for: {l.swapWanted}</div>
@@ -204,50 +357,156 @@ export function ListingDetail() {
               {notice}
             </p>
           )}
-          {own ? (
-            <div className="stack">
-              {["active", "reserved"].includes(l.status) && (
-                <>
-                  <Link className="button primary" to={`/xchange/${l.id}/edit`}>
-                    Edit listing
-                  </Link>
+          {myDeal && (
+            <section
+              className="panel handover-panel"
+              aria-label="Item handover"
+            >
+              <h2>Item handover</h2>
+              <p>
+                {myDeal.status === "confirmed"
+                  ? "Both students confirmed this handover."
+                  : "Confirm only after you exchange the item. Both students must confirm."}
+              </p>
+              <p>
+                Seller: {myDeal.sellerConfirmed ? "Confirmed" : "Waiting"} ·
+                Buyer: {myDeal.buyerConfirmed ? "Confirmed" : "Waiting"}
+              </p>
+              {myDeal.status === "proposed" && (
+                <div className="actions">
                   <button
-                    className="button secondary"
+                    className="button primary"
+                    disabled={
+                      own ? myDeal.sellerConfirmed : myDeal.buyerConfirmed
+                    }
                     onClick={() =>
-                      run(() =>
-                        api.setListingStatus(
-                          l.id,
-                          l.status === "active" ? "reserved" : "active",
-                        ),
-                      )
+                      run(() => {
+                        api.confirmDeal(myDeal.id, true);
+                      })
                     }
                   >
-                    {l.status === "active" ? "Reserve item" : "Make available"}
+                    Confirm handover
                   </button>
                   <button
                     className="button secondary"
-                    onClick={() =>
-                      run(() => api.setListingStatus(l.id, "completed"))
-                    }
-                  >
-                    Mark{" "}
-                    {l.mode === "sale"
-                      ? "sold"
-                      : l.mode === "donation"
-                        ? "donated"
-                        : "swapped"}
-                  </button>
-                  <button
-                    className="text-button"
                     onClick={() => {
-                      if (confirm("Withdraw this listing?"))
-                        run(() => api.setListingStatus(l.id, "withdrawn"));
+                      if (
+                        confirm(
+                          "Cancel this handover and make the listing available?",
+                        )
+                      )
+                        run(() => {
+                          api.confirmDeal(myDeal.id, false);
+                        });
                     }}
                   >
-                    Withdraw listing
+                    Cancel handover
                   </button>
-                </>
+                </div>
               )}
+            </section>
+          )}
+          {own ? (
+            <div className="stack">
+              {["active", "reserved"].includes(l.status) &&
+                !l.pendingDealId && (
+                  <>
+                    <Link
+                      className="button primary"
+                      to={`/xchange/${l.id}/edit`}
+                    >
+                      Edit listing
+                    </Link>
+                    <button
+                      className="button secondary"
+                      onClick={() =>
+                        run(() =>
+                          api.setListingStatus(
+                            l.id,
+                            l.status === "active" ? "reserved" : "active",
+                            l.updatedAt,
+                          ),
+                        )
+                      }
+                    >
+                      {l.status === "active"
+                        ? "Reserve item"
+                        : "Make available"}
+                    </button>
+                    <button
+                      className="button secondary"
+                      onClick={() =>
+                        run(() => {
+                          if (
+                            confirm(
+                              "Mark this item completed? This is self-reported, not a confirmed handover.",
+                            )
+                          )
+                            api.setListingStatus(
+                              l.id,
+                              "completed",
+                              l.updatedAt,
+                            );
+                        })
+                      }
+                    >
+                      Mark{" "}
+                      {l.mode === "sale"
+                        ? "sold"
+                        : l.mode === "donation"
+                          ? "donated"
+                          : "swapped"}
+                    </button>
+                    {buyers.length > 0 && (
+                      <form
+                        className="handover-proposal"
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          run(() => {
+                            api.proposeDeal(l.id, buyer, handoverKey);
+                          });
+                        }}
+                      >
+                        <label>
+                          Student for handover
+                          <select
+                            aria-label="Student for handover"
+                            required
+                            value={buyer}
+                            onChange={(e) => setBuyer(e.target.value)}
+                          >
+                            <option value="">
+                              Choose a student from your conversations
+                            </option>
+                            {buyers.map((u) => (
+                              <option key={u.id} value={u.id}>
+                                {u.displayName}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <button className="button secondary">
+                          Propose handover
+                        </button>
+                      </form>
+                    )}
+                    <button
+                      className="text-button"
+                      onClick={() => {
+                        if (confirm("Withdraw this listing?"))
+                          run(() =>
+                            api.setListingStatus(
+                              l.id,
+                              "withdrawn",
+                              l.updatedAt,
+                            ),
+                          );
+                      }}
+                    >
+                      Withdraw listing
+                    </button>
+                  </>
+                )}
             </div>
           ) : (
             <>
@@ -310,17 +569,29 @@ export function ListingDetail() {
     </>
   );
 }
-export function ListingForm() {
+function DemoListingForm() {
   const { listingId } = useParams();
   const s = useDemo();
   const existing = s.listings.find((l) => l.id === listingId);
   const navigate = useNavigate();
   const { error, setError, run } = useAction();
   const [mode, setMode] = useState<ListingMode>(existing?.mode ?? "sale");
-  const [image, setImage] = useState(existing?.imagePaths[0] ?? "");
+  const [images, setImages] = useState<string[]>(
+    existing?.imagePaths.filter((p) => !p.startsWith("demo:")) ?? [],
+  );
+  const [submitting, setSubmitting] = useState(false);
+  const [expectedVersion] = useState(existing?.updatedAt);
   const [uploading, setUploading] = useState(false);
   const [key] = useState(() => crypto.randomUUID());
-  if (listingId && (!existing || existing.ownerId !== s.currentUserId))
+  if (
+    listingId &&
+    (!existing ||
+      existing.ownerId !== s.currentUserId ||
+      existing.campusId !==
+        s.users.find((u) => u.id === s.currentUserId)?.campusId ||
+      !["active", "reserved"].includes(existing.status) ||
+      existing.pendingDealId)
+  )
     return (
       <Empty
         title="You cannot edit this listing"
@@ -331,6 +602,7 @@ export function ListingForm() {
     );
   function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (uploading || submitting) return;
     const f = new FormData(e.currentTarget);
     const input: CreateListingInput = {
       title: String(f.get("title")),
@@ -345,18 +617,20 @@ export function ListingForm() {
             ? 0
             : Math.round(Number(f.get("price")) * 100),
       swapWanted: String(f.get("swapWanted") ?? ""),
-      imagePaths: [image || `demo:${f.get("category")}`],
+      imagePaths: images.length ? images : [`demo:${f.get("category")}`],
       idempotencyKey: key,
     };
+    setSubmitting(true);
     run(() => {
       if (existing) {
-        api.updateListing(existing.id, input, existing.updatedAt);
+        api.updateListing(existing.id, input, expectedVersion!);
         navigate(`/xchange/${existing.id}`);
       } else {
         const result = api.createListing(input);
         navigate(`/xchange/${result.listingId}`);
       }
     });
+    setSubmitting(false);
   }
   return (
     <>
@@ -423,6 +697,7 @@ export function ListingForm() {
                 name="price"
                 min="0.01"
                 step="0.01"
+                max="1000000"
                 defaultValue={
                   existing?.pricePaise ? existing.pricePaise / 100 : ""
                 }
@@ -454,20 +729,31 @@ export function ListingForm() {
           />
         </label>
         <label>
-          Item photo{" "}
+          Item photos{" "}
           <span className="label-note">
-            Optional in demo; a category illustration is used otherwise.
+            Up to five JPG, PNG or WebP images, 5 MB each. A category
+            illustration is available in the local demo.
           </span>
           <input
             type="file"
+            aria-label="Item photos"
             accept="image/jpeg,image/png,image/webp"
+            multiple
+            disabled={uploading || images.length >= 5}
             onChange={async (e) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
+              const files = Array.from(e.target.files ?? []);
+              e.target.value = "";
+              if (!files.length) return;
+              if (files.length + images.length > 5) {
+                setError("Use at most five photos.");
+                return;
+              }
               setUploading(true);
               setError("");
               try {
-                setImage(api.saveImage(await compressImage(file)));
+                const converted = await Promise.all(files.map(compressImage));
+                const paths = converted.map((data) => api.saveImage(data));
+                setImages((old) => [...old, ...paths]);
               } catch (err) {
                 setError(errorText(err));
               } finally {
@@ -476,10 +762,27 @@ export function ListingForm() {
             }}
           />
         </label>
-        {image && <p className="success">Image ready.</p>}
+        {uploading && <p role="status">Preparing photos…</p>}
+        <div className="photo-previews">
+          {images.map((path, i) => (
+            <div key={path}>
+              <img src={s.images[path]} alt={`Item photo ${i + 1}`} />
+              <button
+                type="button"
+                className="text-button"
+                disabled={uploading}
+                onClick={() =>
+                  setImages((old) => old.filter((p) => p !== path))
+                }
+              >
+                Remove photo {i + 1}
+              </button>
+            </div>
+          ))}
+        </div>
         <div className="form-footer">
           <Link to="/xchange">Cancel</Link>
-          <button disabled={uploading} className="button primary">
+          <button disabled={uploading || submitting} className="button primary">
             {uploading
               ? "Preparing image…"
               : existing

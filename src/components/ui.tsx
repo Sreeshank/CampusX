@@ -113,7 +113,11 @@ export function ProductArt({
   large?: boolean;
 }) {
   const s = useDemo();
-  const image = s.images[listing.imagePaths[0]];
+  const [selectedImage, setSelectedImage] = useState(0);
+  const image =
+    s.images[
+      listing.imagePaths[Math.min(selectedImage, listing.imagePaths.length - 1)]
+    ];
   const Icon =
     listing.category === "books"
       ? BookOpen
@@ -125,23 +129,44 @@ export function ProductArt({
             ? Armchair
             : Package;
   return (
-    <div
-      className={`product-art art-${listing.category} ${large ? "art-large" : ""}`}
-    >
-      {image ? (
-        <img src={image} alt={listing.title} />
-      ) : (
-        <>
-          <div className="art-ring" />
-          <Icon aria-hidden="true" strokeWidth={1.1} />
-          <span className="art-caption">
-            {listing.category === "books"
-              ? "A new chapter"
-              : listing.category === "bicycles"
-                ? "Keep moving"
-                : "A second life"}
-          </span>
-        </>
+    <div className="product-gallery">
+      <div
+        className={`product-art art-${listing.category} ${large ? "art-large" : ""}`}
+      >
+        {image ? (
+          <img src={image} alt={listing.title} />
+        ) : (
+          <>
+            <div className="art-ring" />
+            <Icon aria-hidden="true" strokeWidth={1.1} />
+            <span className="art-caption">
+              {listing.category === "books"
+                ? "A new chapter"
+                : listing.category === "bicycles"
+                  ? "Keep moving"
+                  : "A second life"}
+            </span>
+          </>
+        )}
+      </div>
+      {large && listing.imagePaths.length > 1 && (
+        <div className="gallery-thumbnails" aria-label="Item photos">
+          {listing.imagePaths.map((path, i) => (
+            <button
+              key={path}
+              type="button"
+              aria-label={`View photo ${i + 1}`}
+              aria-pressed={selectedImage === i}
+              onClick={() => setSelectedImage(i)}
+            >
+              {s.images[path] ? (
+                <img src={s.images[path]} alt={`Item photo ${i + 1}`} />
+              ) : (
+                <span>Photo {i + 1}</span>
+              )}
+            </button>
+          ))}
+        </div>
       )}
     </div>
   );

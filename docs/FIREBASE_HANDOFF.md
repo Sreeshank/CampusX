@@ -1,5 +1,7 @@
 # Connecting the real backend
 
+Person 1 update: `functions/src/xchange/` now contains actual listing/deal handlers and paginated read transports. See [PERSON_1_HANDOFF.md](PERSON_1_HANDOFF.md) for the live Home, shell, views, typed platform dependencies, schema additions and emulator tests. Keep this module intact while implementing platform authentication and rules.
+
 The original shared setup/key guide is in `docs/specs/shared/02_SETUP_AND_KEYS.md`. No real credentials are supplied. Firebase Storage and deployed Functions may require billing; begin with emulators.
 
 ## Sequence
@@ -9,7 +11,7 @@ The original shared setup/key guide is in `docs/specs/shared/02_SETUP_AND_KEYS.m
 3. Configure Firebase CLI project aliases locally; no production project ID is hard-coded here. Start Auth/Firestore/Functions/Storage emulators. See `firebase.json` for ports.
 4. Implement real Auth provider and protected account documents. Establish manual campus approval and a trusted first-admin procedure.
 5. Implement authorization helpers, safe public profiles, Firestore/Storage rules, and emulator denial tests. The shipped rules deny all access by design.
-6. Persons 1 and 3 replace their Cloud Function stubs with input validation, caller ownership/campus checks and idempotent writes. Ride seat changes require transactions; never just copy the local array mutations.
+6. Person 3 replaces their Cloud Function stubs; Person 2 reviews the implemented Person 1 handlers with input validation, caller ownership/campus checks and idempotent writes. Ride seat changes require transactions; never just copy the local array mutations.
 7. Build async frontend adapters and read subscriptions with pagination. Wire pages to a provider; replace every demo-store import. Translate Firebase Timestamp to ISO strings at the adapter boundary.
 8. Remove the `VITE_DATA_MODE=firebase` blocker only after live adapter, errors, roles, rules and transactions pass tests. Keep the demo account selector entirely out of live mode.
 9. Test two actual accounts on separate devices in a development environment. Review staged indexes. Then build and deploy the configured development Hosting target manually.
