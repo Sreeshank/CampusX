@@ -2,6 +2,10 @@
 
 **Connect. Share. Ride.** A beginner-friendly browser-app starting point for a three-person team at KITS Warangal.
 
+[Open the live CampusX demo](https://sreeshank.github.io/CampusX/)
+
+Hosted free on GitHub Pages. Demo data stays in your browser; live Firebase integration is pending.
+
 ## Start in five minutes
 
 Install Node.js **22.18+** (Node 24 LTS is also suitable for frontend development) and Git. Then run in the VS Code terminal:
