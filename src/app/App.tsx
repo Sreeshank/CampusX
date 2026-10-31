@@ -1,5 +1,6 @@
 import {
   BrowserRouter,
+  HashRouter,
   Navigate,
   Outlet,
   Route,
@@ -23,6 +24,8 @@ import { Messages } from "../features/messages/Messages";
 import { Admin } from "../features/admin/Admin";
 import { Notifications } from "../features/notifications/Notifications";
 import { Empty } from "../components/ui";
+// Static hosts use hash routes so refreshes never require server rewrites.
+const Router = import.meta.env.BASE_URL === '/' ? BrowserRouter : HashRouter;
 function SignedIn() {
   const s = useDemo();
   return s.currentUserId ? <Outlet /> : <Navigate to="/login" replace />;
@@ -66,7 +69,7 @@ export default function App() {
       </div>
     );
   return (
-    <BrowserRouter>
+    <Router>
       <ScrollReset />
       <Routes>
         <Route path="/login" element={<Login />} />
@@ -112,6 +115,6 @@ export default function App() {
           </Route>
         </Route>
       </Routes>
-    </BrowserRouter>
+    </Router>
   );
 }

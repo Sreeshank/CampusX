@@ -35,6 +35,6 @@ export const useDemo = () =>
   useSyncExternalStore(engine.subscribe, engine.getSnapshot);
 export function resetDemo() {
   localStorage.removeItem(KEY);
-  window.location.assign("/home");
+  window.location.assign(`${import.meta.env.BASE_URL}${import.meta.env.BASE_URL === "/" ? "home" : "#/home"}`);
 }
 // Deliberately no cross-tab syncing: use the account switcher for local two-person workflows.

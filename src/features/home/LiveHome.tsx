@@ -51,7 +51,7 @@ export function LiveHome() {
           </p>
         </div>
         <img
-          src="/campus-community.svg"
+          src={`${import.meta.env.BASE_URL}campus-community.svg`}
           alt="Illustration of three students together on campus"
         />
       </section>
